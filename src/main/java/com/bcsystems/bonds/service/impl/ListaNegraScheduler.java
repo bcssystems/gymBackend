@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -29,26 +30,20 @@ public class ListaNegraScheduler {
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void ejecutarRevisionAutomatica() {
-        int diasLimite = configuracionService.getValorInt("diasListaNegra", 90);
-        LocalDateTime ahora = LocalDateTime.now();
+        int diasLimite = configuracionService.getValorInt("diasDesactivacionMembresia", 0);
+        LocalDate hoy = LocalDate.now();
 
         List<Cliente> candidatos = clienteRepository.findActivos(null).stream()
-                .filter(c -> Boolean.TRUE.equals(c.getTieneCredito()))
-                .filter(c -> (c.getSaldoActual() == null || c.getSaldoActual() > 0))
-                .filter(c -> !Boolean.TRUE.equals(c.getEnListaNegra()))
+                .filter(c -> c.getFechaFinMembresia() != null)
                 .toList();
 
         int agregados = 0;
         for (Cliente cliente : candidatos) {
-            LocalDateTime referencia = fechaReferenciaMorosidad(cliente.getIdCliente());
-            if (referencia == null) continue;
-            if (referencia.plusDays(diasLimite).isBefore(ahora)) {
-                cliente.setEnListaNegra(true);
-                cliente.setFechaListaNegra(ahora);
-                cliente.setMotivoListaNegra("Sin abonos en los ultimos " + diasLimite + " dias");
+            if (cliente.getFechaFinMembresia().plusDays(diasLimite).isBefore(hoy)) {
+                cliente.setActivo(false);
                 clienteRepository.save(cliente);
                 agregados++;
-                log.info("Cliente agregado a lista negra (automatico): {} {}", cliente.getNombre(), cliente.getApellidoPaterno());
+                log.info("Cliente desactivado por membresía vencida: {} {}", cliente.getNombre(), cliente.getApellidoPaterno());
             }
         }
         if (agregados > 0) {
@@ -56,16 +51,4 @@ public class ListaNegraScheduler {
         }
     }
 
-    private LocalDateTime fechaReferenciaMorosidad(Integer idCliente) {
-        var maxAbono = abonoRepository.findMaxFechaByCliente(idCliente);
-        if (maxAbono.isPresent()) {
-            return maxAbono.get();
-        }
-        List<Credito> activos = creditoRepository.findByClienteIdClienteAndEstadoOrderByFechaCreacionDesc(
-                idCliente, EstadoCredito.ACTIVO);
-        return activos.stream()
-                .map(Credito::getFechaCreacion)
-                .min(LocalDateTime::compareTo)
-                .orElse(null);
-    }
 }

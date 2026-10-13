@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record ProductoRequest(
-    String sku,
+    @NotBlank String sku,
     @NotBlank String nombre,
     String descripcion,
     Double precioBase,

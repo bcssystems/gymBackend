@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Audited
 @Entity
@@ -85,4 +86,14 @@ public class Venta {
 
     @Column(updatable = false)
     private LocalDateTime fecha;
+
+    // Snapshot de la membresía del cliente para poder revertirla al cancelar la venta.
+    private LocalDate membresiaFechaInicioAnterior;
+    private LocalDate membresiaFechaFinAnterior;
+    @Column(length = 200)
+    private String membresiaTipoAnterior;
+    private Boolean membresiaActivaAnterior;
+    private LocalDate membresiaFechaFinNueva;
+    @Column(length = 200)
+    private String membresiaTipoNueva;
 }

@@ -38,26 +38,14 @@ public class ConfiguracionServiceImpl implements ConfiguracionService {
 
     private static final Map<String, String> DEFAULTS = Map.ofEntries(
             Map.entry("fondoCajas", "2000"),
-            Map.entry("tasaInteresMoraPagare", "5"),
-            Map.entry("diasListaNegra", "90"),
-            Map.entry("titularPagare", "PRISCILA ARONG KIM LOPEZ"),
-            Map.entry("descripcionEmpresa", "PRISCILA ARONG KIM LOPEZ / BONDS"),
-            Map.entry("direccionEmpresa", "")
-            ,Map.entry("logoTicket", "")
-            ,Map.entry("encabezadoTicket", "")
-            ,Map.entry("pieTicket", "")
+            Map.entry("diasDesactivacionMembresia", "0"),
+            Map.entry("logoTicket", "")
     );
 
     private static final Map<String, String> DESCRIPCIONES = Map.ofEntries(
             Map.entry("fondoCajas", "Monto recomendado para abrir cualquier caja"),
-            Map.entry("tasaInteresMoraPagare", "Tasa de interes mensual de mora que se imprime en el pagare"),
-            Map.entry("diasListaNegra", "Dias sin abonar para pasar automaticamente a lista negra"),
-            Map.entry("titularPagare", "Nombre del titular que se imprime en el pagare"),
-            Map.entry("descripcionEmpresa", "Nombre/datos de la empresa en tickets y documentos"),
-            Map.entry("direccionEmpresa", "Direccion de la empresa en tickets y documentos")
-            ,Map.entry("logoTicket", "Logo usado en tickets")
-            ,Map.entry("encabezadoTicket", "Texto adicional del encabezado del ticket")
-            ,Map.entry("pieTicket", "Texto del pie del ticket")
+            Map.entry("diasDesactivacionMembresia", "Dias posteriores al vencimiento para desactivar automáticamente al cliente"),
+            Map.entry("logoTicket", "Logo usado en tickets")
     );
 
     @PostConstruct

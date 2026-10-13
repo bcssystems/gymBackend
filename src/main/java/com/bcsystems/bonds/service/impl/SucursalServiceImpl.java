@@ -44,6 +44,9 @@ public class SucursalServiceImpl implements SucursalService {
     @Transactional
     @Override
     public SucursalResponse crear(SucursalRequest request) {
+        if (!sucursalRepository.findByActivaTrueOrderByNombreAsc().isEmpty()) {
+            throw new InvalidEntryException("El sistema está configurado para operar con una sola sucursal");
+        }
         if (sucursalRepository.existsByNombreIgnoreCase(request.nombre())) {
             throw new InvalidEntryException("Ya existe una sucursal con ese nombre");
         }

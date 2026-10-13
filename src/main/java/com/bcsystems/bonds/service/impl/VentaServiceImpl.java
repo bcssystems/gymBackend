@@ -43,6 +43,7 @@ public class VentaServiceImpl implements VentaService {
     private final CarritoItemRapidoRepository carritoItemRapidoRepository;
     private final MovimientoStockRepository movimientoStockRepository;
     private final ClienteIneRepository clienteIneRepository;
+    private final MembresiaRepository membresiaRepository;
 
     @Override
     @Transactional
@@ -59,6 +60,19 @@ public class VentaServiceImpl implements VentaService {
         Persona usuario = obtenerPersonaActual();
         Cliente cliente = request.idCliente() != null
                 ? clienteRepository.findById(request.idCliente()).orElse(null) : null;
+
+        Membresia membresia = null;
+        if (request.idMembresia() != null) {
+            if (cliente == null) throw new InvalidEntryException("Selecciona un cliente para vender una membresía");
+            membresia = membresiaRepository.findById(request.idMembresia())
+                    .orElseThrow(() -> new NotFoundException("Membresía no encontrada"));
+            if (!Boolean.TRUE.equals(membresia.getActiva())) {
+                throw new InvalidEntryException("La membresía está inactiva");
+            }
+            if (!List.of("DIA", "SEMANA", "MES", "ANIO").contains(request.duracionMembresia())) {
+                throw new InvalidEntryException("La duración de la membresía no es válida");
+            }
+        }
 
         if (cliente != null && Boolean.TRUE.equals(cliente.getEnListaNegra())) {
             throw new InvalidEntryException("El cliente está en lista negra y no puede realizar compras a crédito");
@@ -293,6 +307,35 @@ public class VentaServiceImpl implements VentaService {
         reservaProductoRepository.deleteByCajaIdCaja(request.idCaja());
         carritoItemRapidoRepository.deleteByCajaIdCajaNative(request.idCaja());
 
+        if (membresia != null) {
+            venta.setMembresiaFechaInicioAnterior(cliente.getFechaInicioMembresia());
+            venta.setMembresiaFechaFinAnterior(cliente.getFechaFinMembresia());
+            venta.setMembresiaTipoAnterior(cliente.getTipoMembresia());
+            venta.setMembresiaActivaAnterior(cliente.getActivo());
+            LocalDate hoy = LocalDate.now();
+            LocalDate base = cliente.getFechaFinMembresia() != null && !cliente.getFechaFinMembresia().isBefore(hoy)
+                    ? cliente.getFechaFinMembresia() : hoy;
+            LocalDate inicio = cliente.getFechaInicioMembresia() != null && !cliente.getFechaFinMembresia().isBefore(hoy)
+                    ? cliente.getFechaInicioMembresia() : hoy;
+            LocalDate fin = switch (request.duracionMembresia()) {
+                case "DIA" -> base.plusDays(1);
+                case "SEMANA" -> base.plusWeeks(1);
+                case "MES" -> base.plusMonths(1);
+                default -> base.plusYears(1);
+            };
+            cliente.setFechaInicioMembresia(inicio);
+            cliente.setFechaFinMembresia(fin);
+            cliente.setTipoMembresia(membresia.getNombre());
+            cliente.setActivo(true);
+            clienteRepository.save(cliente);
+            venta.setMembresiaFechaFinNueva(fin);
+            venta.setMembresiaTipoNueva(membresia.getNombre());
+            ventaRepository.save(venta);
+            auditoriaService.registrar("MEMBRESIA", membresia.getIdMembresia(), "ACTUALIZACION",
+                    usuario.getUsuario(), "Compra de " + membresia.getNombre() + " para cliente #"
+                            + cliente.getIdCliente() + " hasta " + fin);
+        }
+
         auditoriaService.registrar("Venta", venta.getIdVenta(), AccionAuditoria.CREACION.name(),
                 usuario.getUsuario(), "Venta $" + request.total() + " - " + caja.getNombre());
 
@@ -416,6 +459,22 @@ public class VentaServiceImpl implements VentaService {
 
         Sucursal sucursal = venta.getCaja().getSucursal();
         List<VentaDetalle> detalles = ventaDetalleRepository.findByVentaIdVenta(id);
+        boolean incluyeMembresia = detalles.stream()
+                .anyMatch(d -> "MEMBRESIA".equalsIgnoreCase(d.getTipoDetalle()));
+        if (incluyeMembresia && venta.getCliente() != null) {
+            Cliente cliente = venta.getCliente();
+            boolean correspondeALaVenta = venta.getMembresiaFechaFinNueva() == null
+                    || venta.getMembresiaFechaFinNueva().equals(cliente.getFechaFinMembresia());
+            if (correspondeALaVenta) {
+                cliente.setFechaInicioMembresia(venta.getMembresiaFechaInicioAnterior());
+                cliente.setFechaFinMembresia(venta.getMembresiaFechaFinAnterior());
+                cliente.setTipoMembresia(venta.getMembresiaTipoAnterior());
+                cliente.setActivo(venta.getMembresiaActivaAnterior());
+                clienteRepository.save(cliente);
+                auditoriaService.registrar("MEMBRESIA", cliente.getIdCliente(), "ACTUALIZACION",
+                        autorizador.getUsuario(), "Membresía revertida por cancelación de venta #" + id);
+            }
+        }
         for (VentaDetalle d : detalles) {
             if (d.getProducto() != null) {
                 Producto p = d.getProducto();

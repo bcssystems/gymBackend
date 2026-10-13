@@ -491,7 +491,11 @@ public class CajaServiceImpl implements CajaService {
     }
 
     private void validarCajaUnica(Sucursal sucursal, TipoCaja tipo, Integer idExcluir) {
-        // Una sucursal puede operar cualquier cantidad de cajas, incluso del mismo tipo.
+        boolean existe = cajaRepository.findByActivaTrueOrderByNombre().stream()
+                .anyMatch(c -> idExcluir == null || !c.getIdCaja().equals(idExcluir));
+        if (existe) {
+            throw new InvalidEntryException("El sistema está configurado para operar con una sola caja");
+        }
     }
 
     private String obtenerUsuarioActual() {

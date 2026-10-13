@@ -252,7 +252,8 @@ public class CreditoServiceImpl implements CreditoService {
                 c.getActivo(), c.getFechaRegistro(),
                 c.getTieneCredito(), c.getLimiteCredito(), c.getSaldoActual(),
                 c.getEnListaNegra(), c.getFechaListaNegra(), c.getMotivoListaNegra(),
-                tieneIne);
+                tieneIne, c.getEmployeeNo(), c.getFechaInicioMembresia(),
+                c.getFechaFinMembresia(), c.getTipoMembresia());
 
         String titular = configuracionService.getValor("titularPagare", "PRISCILA ARONG KIM LOPEZ");
         double tasaMora = configuracionService.getValorDouble("tasaInteresMoraPagare", 5.0);

@@ -110,8 +110,9 @@ public class DataSeedRunner implements CommandLineRunner {
                  "KARDEX_VER",
                 "MOVIMIENTOS_INVENTARIO_VER",
                 "CANCELACIONES_VER",
-                "PROMOCIONES_VER",
-                "CONFIGURACION_VER")));
+                 "PROMOCIONES_VER",
+                 "CONFIGURACION_VER",
+                 "MEMBRESIAS_VER", "MEMBRESIAS_CREAR", "MEMBRESIAS_EDITAR", "MEMBRESIAS_ELIMINAR")));
 
         for (var entry : permisosPorRol.entrySet()) {
             String nombre = entry.getKey();
@@ -347,6 +348,12 @@ public class DataSeedRunner implements CommandLineRunner {
         map.put("CONFIGURACION", List.of(
                 new String[]{"CONFIGURACION_VER", "Ver Configuracion"},
                 new String[]{"CONFIGURACION_EDITAR", "Editar Configuracion"}
+        ));
+        map.put("MEMBRESIAS", List.of(
+                new String[]{"MEMBRESIAS_VER", "Ver Membresías"},
+                new String[]{"MEMBRESIAS_CREAR", "Crear Membresías"},
+                new String[]{"MEMBRESIAS_EDITAR", "Editar Membresías"},
+                new String[]{"MEMBRESIAS_ELIMINAR", "Eliminar Membresías"}
         ));
         map.put("AUDITORIAS", List.<String[]>of(
                 new String[]{"AUDITORIAS_VER", "Ver Auditorias"}

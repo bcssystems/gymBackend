@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.FileSystemResource;
+import jakarta.annotation.PostConstruct;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,6 +45,17 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Value("${app.upload.dir:./uploads/multimedia}")
     private String uploadDir;
+
+    @PostConstruct
+    @Transactional
+    void asignarEmployeeNosExistentes() {
+        clienteRepository.findAll().stream()
+                .filter(cliente -> cliente.getEmployeeNo() == null || cliente.getEmployeeNo().isBlank())
+                .forEach(cliente -> {
+                    cliente.setEmployeeNo(siguienteEmployeeNo());
+                    clienteRepository.save(cliente);
+                });
+    }
 
     @Override
     public Page<ClienteResponse> listar(String search, Boolean activo, int page, int size) {
@@ -79,11 +91,11 @@ public class ClienteServiceImpl implements ClienteService {
                 .nombre(request.nombre())
                 .apellidoPaterno(request.apellidoPaterno())
                 .apellidoMaterno(request.apellidoMaterno())
-                .telefono(request.telefono())
+                .telefono(request.telefono() != null ? request.telefono() : "")
                 .codigoPais(request.codigoPais() != null ? request.codigoPais() : "+52")
                 .whatsapp(request.whatsapp())
                 .empresa(request.empresa())
-                .regimenFiscal(request.regimenFiscal())
+                .regimenFiscal(request.regimenFiscal() != null ? request.regimenFiscal() : "N/A")
                 .cp(request.cp())
                 .direccion(request.direccion())
                 .calle(request.calle())
@@ -99,6 +111,10 @@ public class ClienteServiceImpl implements ClienteService {
                 .limiteCredito(request.limiteCredito())
                 .saldoActual(0.0)
                 .enListaNegra(false)
+                .employeeNo(siguienteEmployeeNo())
+                .fechaInicioMembresia(null)
+                .fechaFinMembresia(null)
+                .tipoMembresia(null)
                 .activo(true)
                 .fechaRegistro(LocalDateTime.now())
                 .build();
@@ -116,11 +132,11 @@ public class ClienteServiceImpl implements ClienteService {
         cliente.setNombre(request.nombre());
         cliente.setApellidoPaterno(request.apellidoPaterno());
         cliente.setApellidoMaterno(request.apellidoMaterno());
-        cliente.setTelefono(request.telefono());
+        cliente.setTelefono(request.telefono() != null ? request.telefono() : "");
         cliente.setCodigoPais(request.codigoPais() != null ? request.codigoPais() : "+52");
         cliente.setWhatsapp(request.whatsapp());
         cliente.setEmpresa(request.empresa());
-        cliente.setRegimenFiscal(request.regimenFiscal());
+        cliente.setRegimenFiscal(request.regimenFiscal() != null ? request.regimenFiscal() : "N/A");
         cliente.setCp(request.cp());
         cliente.setDireccion(request.direccion());
         cliente.setCalle(request.calle());
@@ -134,11 +150,33 @@ public class ClienteServiceImpl implements ClienteService {
         cliente.setDireccionEntrega(request.direccionEntrega());
         cliente.setTieneCredito(request.tieneCredito() != null && request.tieneCredito());
         cliente.setLimiteCredito(request.limiteCredito());
+        if (cliente.getEmployeeNo() == null || cliente.getEmployeeNo().isBlank()) {
+            cliente.setEmployeeNo(siguienteEmployeeNo());
+        }
         cliente = clienteRepository.save(cliente);
 
         auditoriaService.registrar("Cliente", id, "ACTUALIZACION",
                 obtenerUsuarioActual(), "Cliente actualizado: " + cliente.getNombre());
         return toResponse(cliente);
+    }
+
+    private String vacioANulo(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String siguienteEmployeeNo() {
+        String prefijo = "GYM";
+        int siguiente = clienteRepository.findTopByEmployeeNoStartingWithOrderByEmployeeNoDesc(prefijo)
+                .map(Cliente::getEmployeeNo)
+                .map(value -> {
+                    try {
+                        return Integer.parseInt(value.substring(prefijo.length())) + 1;
+                    } catch (RuntimeException ex) {
+                        return 1;
+                    }
+                })
+                .orElse(1);
+        return prefijo + String.format("%06d", siguiente);
     }
 
     @Override
@@ -280,6 +318,7 @@ public class ClienteServiceImpl implements ClienteService {
                 c.getActivo(), c.getFechaRegistro(),
                 c.getTieneCredito(), c.getLimiteCredito(), c.getSaldoActual(),
                 c.getEnListaNegra(), c.getFechaListaNegra(), c.getMotivoListaNegra(),
-                tieneIne);
+                tieneIne, c.getEmployeeNo(), c.getFechaInicioMembresia(),
+                c.getFechaFinMembresia(), c.getTipoMembresia());
     }
 }

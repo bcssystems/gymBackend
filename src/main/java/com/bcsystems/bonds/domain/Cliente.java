@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Audited
 @Entity
@@ -89,6 +90,16 @@ public class Cliente {
 
     @Column(length = 300)
     private String motivoListaNegra;
+
+    @Column(length = 80, unique = true)
+    private String employeeNo;
+
+    private LocalDate fechaInicioMembresia;
+
+    private LocalDate fechaFinMembresia;
+
+    @Column(length = 150)
+    private String tipoMembresia;
 
     @Column(nullable = false)
     private Boolean activo;

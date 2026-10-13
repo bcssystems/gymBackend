@@ -1,12 +1,13 @@
 package com.bcsystems.bonds.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import java.time.LocalDate;
 
 public record ClienteRequest(
         @NotBlank String nombre,
         @NotBlank String apellidoPaterno,
         String apellidoMaterno,
-        @NotBlank String telefono,
+        String telefono,
         String codigoPais,
         String whatsapp,
         String empresa,
@@ -23,5 +24,9 @@ public record ClienteRequest(
         String representanteLegal,
         String direccionEntrega,
         Boolean tieneCredito,
-        Double limiteCredito
+        Double limiteCredito,
+        String employeeNo,
+        LocalDate fechaInicioMembresia,
+        LocalDate fechaFinMembresia,
+        String tipoMembresia
 ) {}

@@ -10,7 +10,6 @@ import com.bcsystems.bonds.exception.NotFoundException;
 import com.bcsystems.bonds.repository.*;
 import com.bcsystems.bonds.service.AuditoriaService;
 import com.bcsystems.bonds.service.ProductoService;
-import com.bcsystems.bonds.util.CodigoGeneratorService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -31,7 +30,6 @@ public class ProductoServiceImpl implements ProductoService {
     private final InventarioSucursalRepository inventarioSucursalRepository;
     private final MovimientoStockRepository movimientoStockRepository;
     private final CategoriaRepository categoriaRepository;
-    private final CodigoGeneratorService codigoGenerator;
     private final AuditoriaService auditoriaService;
 
     public ProductoServiceImpl(ProductoRepository productoRepository,
@@ -39,14 +37,12 @@ public class ProductoServiceImpl implements ProductoService {
                                InventarioSucursalRepository inventarioSucursalRepository,
                                MovimientoStockRepository movimientoStockRepository,
                                CategoriaRepository categoriaRepository,
-                               CodigoGeneratorService codigoGenerator,
                                AuditoriaService auditoriaService) {
         this.productoRepository = productoRepository;
         this.sucursalRepository = sucursalRepository;
         this.inventarioSucursalRepository = inventarioSucursalRepository;
         this.movimientoStockRepository = movimientoStockRepository;
         this.categoriaRepository = categoriaRepository;
-        this.codigoGenerator = codigoGenerator;
         this.auditoriaService = auditoriaService;
     }
 
@@ -88,10 +84,8 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     private ProductoResponse crearProductoSimple(ProductoRequest request, String usuario) {
-        String sku = request.sku();
-        if (sku == null || sku.isBlank()) {
-            sku = codigoGenerator.generarSku();
-        } else if (productoRepository.existsBySkuIgnoreCase(sku)) {
+        String sku = request.sku().trim();
+        if (productoRepository.existsBySkuIgnoreCase(sku)) {
             throw new InvalidEntryException("Ya existe un producto con el SKU: " + sku);
         }
 
@@ -208,6 +202,12 @@ public class ProductoServiceImpl implements ProductoService {
         String usuario = obtenerUsuarioActual();
 
         Producto producto = buscarOExcepcion(id);
+
+        String sku = request.sku().trim();
+        if (!sku.equalsIgnoreCase(producto.getSku()) && productoRepository.existsBySkuIgnoreCase(sku)) {
+            throw new InvalidEntryException("Ya existe un producto con el SKU: " + sku);
+        }
+        producto.setSku(sku);
 
         producto.setNombre(request.nombre());
         producto.setDescripcion(request.descripcion());

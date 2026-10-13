@@ -1,6 +1,7 @@
 package com.bcsystems.bonds.dto;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public record ClienteResponse(
         Integer idCliente,
@@ -31,5 +32,9 @@ public record ClienteResponse(
         Boolean enListaNegra,
         LocalDateTime fechaListaNegra,
         String motivoListaNegra,
-        Boolean tieneIne
+        Boolean tieneIne,
+        String employeeNo,
+        LocalDate fechaInicioMembresia,
+        LocalDate fechaFinMembresia,
+        String tipoMembresia
 ) {}
