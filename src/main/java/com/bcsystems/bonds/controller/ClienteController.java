@@ -41,6 +41,15 @@ public class ClienteController {
         return ResponseEntity.ok(clienteService.listar(search, activo, page, size));
     }
 
+    @GetMapping("/membresias-activas")
+    @PreAuthorize("hasAuthority('CLIENTES_VER')")
+    public ResponseEntity<Page<ClienteResponse>> listarMembresiasActivas(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(clienteService.listarMembresiasActivas(search, page, size));
+    }
+
     @GetMapping("/lista-negra")
     @PreAuthorize("hasAuthority('CLIENTES_VER')")
     public ResponseEntity<List<ClienteResponse>> listarListaNegra() {
@@ -76,6 +85,21 @@ public class ClienteController {
     @PreAuthorize("hasAuthority('CLIENTES_ELIMINAR')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         clienteService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/{id}/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('CLIENTES_EDITAR')")
+    public ResponseEntity<ClienteResponse> subirFoto(
+            @PathVariable Integer id,
+            @RequestParam("foto") MultipartFile foto) {
+        return ResponseEntity.ok(clienteService.subirFoto(id, foto));
+    }
+
+    @DeleteMapping("/{id}/foto")
+    @PreAuthorize("hasAuthority('CLIENTES_EDITAR')")
+    public ResponseEntity<Void> eliminarFoto(@PathVariable Integer id) {
+        clienteService.eliminarFoto(id);
         return ResponseEntity.noContent().build();
     }
 

@@ -35,6 +35,15 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     @Query("SELECT c FROM Cliente c WHERE c.tieneCredito = true AND c.activo = true ORDER BY c.nombre")
     Page<Cliente> findCreditClients(Pageable pageable);
 
+    @Query("SELECT c FROM Cliente c WHERE c.activo = true " +
+           "AND c.fechaFinMembresia IS NOT NULL AND c.fechaFinMembresia >= CURRENT_DATE " +
+           "AND (:search IS NULL OR LOWER(c.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "OR LOWER(c.apellidoPaterno) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "OR LOWER(c.employeeNo) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "OR LOWER(c.tipoMembresia) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "ORDER BY c.fechaFinMembresia ASC, c.nombre ASC")
+    Page<Cliente> findMembresiasActivas(@Param("search") String search, Pageable pageable);
+
     @Query("SELECT c FROM Cliente c WHERE c.enListaNegra = true AND c.activo = true ORDER BY c.fechaListaNegra DESC")
     List<Cliente> findByEnListaNegraTrueOrderByFechaListaNegraDesc();
 }

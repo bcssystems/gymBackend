@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -77,6 +78,13 @@ public class ClienteServiceImpl implements ClienteService {
     public Page<ClienteResponse> listarCreditClients(int page, int size) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("nombre"));
         return clienteRepository.findCreditClients(pageable).map(this::toResponse);
+    }
+
+    @Override
+    public Page<ClienteResponse> listarMembresiasActivas(String search, int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        return clienteRepository.findMembresiasActivas(
+                search == null || search.isBlank() ? null : search.trim(), pageable).map(this::toResponse);
     }
 
     @Override
@@ -223,6 +231,64 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     @Transactional
+    public ClienteResponse subirFoto(Integer id, MultipartFile foto) {
+        Cliente cliente = buscarOExcepcion(id);
+        if (foto == null || foto.isEmpty()) {
+            throw new InvalidEntryException("Debe proporcionar una foto");
+        }
+        String contentType = foto.getContentType();
+        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
+            throw new InvalidEntryException("El archivo debe ser una imagen");
+        }
+        if (foto.getSize() > 5 * 1024 * 1024) {
+            throw new InvalidEntryException("La foto no puede superar 5 MB");
+        }
+        try {
+            Path uploadPath = Paths.get(uploadDir);
+            Files.createDirectories(uploadPath);
+            borrarArchivo(cliente.getFotoUrl(), uploadPath);
+
+            String extension = extensionImagen(foto.getOriginalFilename(), contentType);
+            String nombre = UUID.randomUUID() + ".cliente" + extension;
+            Files.copy(foto.getInputStream(), uploadPath.resolve(nombre), StandardCopyOption.REPLACE_EXISTING);
+            cliente.setFotoUrl("/uploads/" + nombre);
+            cliente = clienteRepository.save(cliente);
+            auditoriaService.registrar("Cliente", id, "ACTUALIZACION", obtenerUsuarioActual(), "Foto de cliente actualizada");
+            return toResponse(cliente);
+        } catch (IOException e) {
+            throw new RuntimeException("Error al guardar la foto del cliente: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void eliminarFoto(Integer id) {
+        Cliente cliente = buscarOExcepcion(id);
+        try {
+            borrarArchivo(cliente.getFotoUrl(), Paths.get(uploadDir));
+        } catch (IOException e) {
+            throw new RuntimeException("Error al eliminar la foto del cliente: " + e.getMessage());
+        }
+        cliente.setFotoUrl(null);
+        clienteRepository.save(cliente);
+        auditoriaService.registrar("Cliente", id, "ACTUALIZACION", obtenerUsuarioActual(), "Foto de cliente eliminada");
+    }
+
+    private String extensionImagen(String original, String contentType) {
+        if (original != null && original.lastIndexOf('.') >= 0) {
+            String ext = original.substring(original.lastIndexOf('.')).toLowerCase(Locale.ROOT);
+            if (ext.matches("\\.(jpg|jpeg|png|webp|gif)")) return ext;
+        }
+        return switch (contentType.toLowerCase(Locale.ROOT)) {
+            case "image/png" -> ".png";
+            case "image/webp" -> ".webp";
+            case "image/gif" -> ".gif";
+            default -> ".jpg";
+        };
+    }
+
+    @Override
+    @Transactional
     public ClienteIneResponse subirIne(Integer id, MultipartFile frontal, MultipartFile trasera) {
         Cliente cliente = buscarOExcepcion(id);
         if (frontal == null && trasera == null) {
@@ -319,6 +385,6 @@ public class ClienteServiceImpl implements ClienteService {
                 c.getTieneCredito(), c.getLimiteCredito(), c.getSaldoActual(),
                 c.getEnListaNegra(), c.getFechaListaNegra(), c.getMotivoListaNegra(),
                 tieneIne, c.getEmployeeNo(), c.getFechaInicioMembresia(),
-                c.getFechaFinMembresia(), c.getTipoMembresia());
+                c.getFechaFinMembresia(), c.getTipoMembresia(), c.getFotoUrl());
     }
 }

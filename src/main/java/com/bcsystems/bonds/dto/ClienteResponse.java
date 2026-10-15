@@ -36,5 +36,6 @@ public record ClienteResponse(
         String employeeNo,
         LocalDate fechaInicioMembresia,
         LocalDate fechaFinMembresia,
-        String tipoMembresia
+        String tipoMembresia,
+        String fotoUrl
 ) {}

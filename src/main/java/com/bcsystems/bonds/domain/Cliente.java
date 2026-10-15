@@ -101,6 +101,9 @@ public class Cliente {
     @Column(length = 150)
     private String tipoMembresia;
 
+    @Column(length = 500)
+    private String fotoUrl;
+
     @Column(nullable = false)
     private Boolean activo;
 

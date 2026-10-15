@@ -13,6 +13,7 @@ import java.util.List;
 public interface ClienteService {
     Page<ClienteResponse> listar(String search, Boolean activo, int page, int size);
     Page<ClienteResponse> listarCreditClients(int page, int size);
+    Page<ClienteResponse> listarMembresiasActivas(String search, int page, int size);
     ClienteResponse obtenerPorId(Integer id);
     ClienteResponse crear(ClienteRequest request);
     ClienteResponse actualizar(Integer id, ClienteRequest request);
@@ -22,4 +23,6 @@ public interface ClienteService {
     ClienteIneResponse subirIne(Integer id, MultipartFile frontal, MultipartFile trasera);
     ClienteIneResponse obtenerIne(Integer id);
     Resource descargarIne(Integer id, String lado);
+    ClienteResponse subirFoto(Integer id, MultipartFile foto);
+    void eliminarFoto(Integer id);
 }
