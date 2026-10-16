@@ -14,6 +14,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 
 import java.util.List;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/v1/clientes")
@@ -45,9 +46,17 @@ public class ClienteController {
     @PreAuthorize("hasAuthority('CLIENTES_VER')")
     public ResponseEntity<Page<ClienteResponse>> listarMembresiasActivas(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) LocalDate inicioDesde,
+            @RequestParam(required = false) LocalDate inicioHasta,
+            @RequestParam(required = false) LocalDate finDesde,
+            @RequestParam(required = false) LocalDate finHasta,
+            @RequestParam(required = false) Integer diasMin,
+            @RequestParam(required = false) Integer diasMax,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(clienteService.listarMembresiasActivas(search, page, size));
+        return ResponseEntity.ok(clienteService.listarMembresiasActivas(search, tipo, inicioDesde, inicioHasta,
+                finDesde, finHasta, diasMin, diasMax, page, size));
     }
 
     @GetMapping("/lista-negra")

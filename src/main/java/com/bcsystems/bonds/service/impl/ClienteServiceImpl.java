@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -81,10 +82,14 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     @Override
-    public Page<ClienteResponse> listarMembresiasActivas(String search, int page, int size) {
+    public Page<ClienteResponse> listarMembresiasActivas(String search, String tipo, LocalDate inicioDesde, LocalDate inicioHasta,
+                                                         LocalDate finDesde, LocalDate finHasta, Integer diasMin, Integer diasMax,
+                                                         int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
         return clienteRepository.findMembresiasActivas(
-                search == null || search.isBlank() ? null : search.trim(), pageable).map(this::toResponse);
+                search == null || search.isBlank() ? null : search.trim(),
+                tipo == null || tipo.isBlank() ? null : tipo.trim(), inicioDesde, inicioHasta, finDesde, finHasta,
+                diasMin, diasMax, pageable).map(this::toResponse);
     }
 
     @Override

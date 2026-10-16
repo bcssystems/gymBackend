@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     Optional<Cliente> findTopByEmployeeNoStartingWithOrderByEmployeeNoDesc(String prefix);
@@ -37,12 +38,23 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
 
     @Query("SELECT c FROM Cliente c WHERE c.activo = true " +
            "AND c.fechaFinMembresia IS NOT NULL AND c.fechaFinMembresia >= CURRENT_DATE " +
+           "AND (:tipo IS NULL OR LOWER(c.tipoMembresia) = LOWER(:tipo)) " +
+           "AND (:inicioDesde IS NULL OR c.fechaInicioMembresia >= :inicioDesde) " +
+           "AND (:inicioHasta IS NULL OR c.fechaInicioMembresia <= :inicioHasta) " +
+           "AND (:finDesde IS NULL OR c.fechaFinMembresia >= :finDesde) " +
+           "AND (:finHasta IS NULL OR c.fechaFinMembresia <= :finHasta) " +
+           "AND (:diasMin IS NULL OR DATEDIFF(c.fechaFinMembresia, CURRENT_DATE) >= :diasMin) " +
+           "AND (:diasMax IS NULL OR DATEDIFF(c.fechaFinMembresia, CURRENT_DATE) <= :diasMax) " +
            "AND (:search IS NULL OR LOWER(c.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR LOWER(c.apellidoPaterno) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR LOWER(c.employeeNo) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR LOWER(c.tipoMembresia) LIKE LOWER(CONCAT('%', :search, '%'))) " +
            "ORDER BY c.fechaFinMembresia ASC, c.nombre ASC")
-    Page<Cliente> findMembresiasActivas(@Param("search") String search, Pageable pageable);
+    Page<Cliente> findMembresiasActivas(@Param("search") String search, @Param("tipo") String tipo,
+                                        @Param("inicioDesde") LocalDate inicioDesde, @Param("inicioHasta") LocalDate inicioHasta,
+                                        @Param("finDesde") LocalDate finDesde, @Param("finHasta") LocalDate finHasta,
+                                        @Param("diasMin") Integer diasMin, @Param("diasMax") Integer diasMax,
+                                        Pageable pageable);
 
     @Query("SELECT c FROM Cliente c WHERE c.enListaNegra = true AND c.activo = true ORDER BY c.fechaListaNegra DESC")
     List<Cliente> findByEnListaNegraTrueOrderByFechaListaNegraDesc();
